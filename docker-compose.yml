@@ -1,0 +1,67 @@
+version: '3.5'
+
+services:
+  katapios:
+    container_name: katapios
+    #platform: linux/amd64
+    build:
+      ./
+    #environment:
+      #POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # - ./src:/opt/src
+    ports:
+      - "8081:8081"
+
+    environment:
+      - MYAPP_JDBC_URL=jdbc:postgresql://postgres:5432/springmvc
+      - MYAPP_JDBC_USER=postgres
+      - MYAPP_JDBC_PASS=postgres
+    networks:
+      - katapios
+    # restart: unless-stopped
+    links:
+      - postgres
+
+  postgres:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /data/postgres
+    volumes:
+       - ./dataBase/postgres:/data/postgres
+          # copy the sql script to create DB
+       - ./sql/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - katapios
+    restart: unless-stopped
+  
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-postgres}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+       - ./dataBase/pgadmin:/var/lib/pgadmin
+       - ./docker_pgadmin_servers.json:/pgadmin4/servers.json
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "/bin/echo 'postgres:5432:*:postgres:password' > /tmp/pgpassfile && chmod 600 /tmp/pgpassfile && /entrypoint.sh"
+    networks:
+      - katapios
+    restart: unless-stopped
+
+networks:
+  katapios:
+    driver: bridge
