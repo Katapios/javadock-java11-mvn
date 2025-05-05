@@ -1,0 +1,11 @@
+jenkins:
+  systemMessage: "Jenkins настроен через JCasC"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: admin
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false

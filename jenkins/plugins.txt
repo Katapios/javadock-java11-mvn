@@ -1,0 +1,7 @@
+workflow-aggregator
+git
+github
+docker-plugin
+docker-workflow
+configuration-as-code
+workflow-job
