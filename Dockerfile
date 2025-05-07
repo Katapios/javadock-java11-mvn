@@ -1,42 +1,29 @@
-# Ubuntu:20.04
-# OpenJDK 8
-# Maven 3.2.2
-# Git
-# Nano
+# Этап 1: сборка фронтенда
+FROM node:18 AS frontend
+WORKDIR /app
 
-# pull base image Ubuntu
-FROM ubuntu:20.04
+RUN git clone https://github.com/Katapios/simple-java11-spring-app.git
+WORKDIR /app/simple-java11-spring-app/frontend
 
-MAINTAINER katapios
+RUN npm install
+RUN npm run build
 
-# this is a non-interactive automated build - avoid some warning messages
-ENV DEBIAN_FRONTEND noninteractive
+# Этап 2: сборка backend .war
+FROM maven:3.9.6-eclipse-temurin-11 AS backend
+WORKDIR /app
 
-# install the OpenJDK 11 java runtime environment
-RUN apt-get update && apt-get upgrade
-RUN apt-get install -y \
-openjdk-11-jdk \
-git
+RUN git clone https://github.com/Katapios/simple-java11-spring-app.git
 
-RUN apt-get clean
+COPY --from=frontend /app/simple-java11-spring-app/frontend/dist/ /app/simple-java11-spring-app/src/main/resources/static/
 
-ENV JAVA_HOME /usr
-ENV PATH $JAVA_HOME/bin:$PATH
+WORKDIR /app/simple-java11-spring-app
+RUN mvn clean package -DskipTests
 
-# install maven
-RUN apt-get install -y maven
-ENV MAVEN_HOME /opt/maven
+# Этап 3: финальный рантайм
+FROM openjdk:11-jre-slim
+WORKDIR /app
 
-WORKDIR "/opt"
-
-# go to github for the project and copy it
-RUN git clone https://github.com/Katapios/simple-java11-spring-app.git .
-
-RUN mvn package
-
-# configure the container to run app, mapping container port 8081 to that host port
-ENTRYPOINT ["java", "-jar", "/opt/target/SpringHello-0.0.1-SNAPSHOT.war"]
+COPY --from=backend /app/simple-java11-spring-app/target/SpringHello-0.0.1-SNAPSHOT.war app.war
 
 EXPOSE 8081
-
-CMD [""]
+ENTRYPOINT ["java", "-jar", "app.war"]
