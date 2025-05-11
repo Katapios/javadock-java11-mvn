@@ -3,7 +3,8 @@ FROM jenkins/jenkins:lts-jdk11
 USER root
 
 RUN apt-get update && \
-    apt-get install -y maven docker.io
+    apt-get install -y maven docker.io && \
+    usermod -aG docker jenkins
 
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 COPY init.groovy.d/ /usr/share/jenkins/ref/init.groovy.d/
